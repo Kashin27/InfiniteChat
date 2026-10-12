@@ -18,6 +18,7 @@ target/
 *.iws
 *.iml
 *.ipr
+out/
 
 ### NetBeans ###
 /nbproject/private/
@@ -31,3 +32,44 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Logs ###
+*.log
+logs/
+
+### Compiled files ###
+*.class
+*.jar
+*.war
+*.ear
+
+### Sensitive files ###
+**/application-dev.yml
+**/application-prod.yml
+**/.env
+**/docker-compose.yml
+**/application.yml
+
+### OS ###
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+desktop.ini
+
+### Temporary files ###
+*.tmp
+*.bak
+*.swp
+*.temp
+
+### Maven ###
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
