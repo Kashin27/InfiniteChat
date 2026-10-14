@@ -1,4 +1,4 @@
-package com.shanyangcode.common;
+package com.shanyangcode.aiservice.common;
 
 /**
  * 自定义错误码

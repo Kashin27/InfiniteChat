@@ -1,6 +1,4 @@
-package com.shanyangcode.common;
-
-import com.shanyangcode.common.BaseResponse;
+package com.shanyangcode.aiservice.common;
 
 /**
  * 返回工具类

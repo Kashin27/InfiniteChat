@@ -1,4 +1,4 @@
-package com.shanyangcode.common;
+package com.shanyangcode.aiservice.common;
 
 import java.io.Serializable;
 
@@ -16,6 +16,7 @@ public class BaseResponse<T> implements Serializable {
         this.data = data;
     }
     public BaseResponse(ErrorCode errorCode) {
+
         this(errorCode.getCode(), null, errorCode.getMessage());
     }
 
