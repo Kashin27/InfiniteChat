@@ -1,13 +1,8 @@
 spring:
+  profiles:
+    active: dev
   application:
     name: InfiniteChat-Agent
-  data:
-    redis:
-      host: localhost
-      port: 59000
-      password: e65K4t8w2
-      ttl: 3600
-      timeout: 30000
   mail:
     host: smtp.qq.com
     port: 587
@@ -44,13 +39,6 @@ langchain4j:
       streaming-chat-model:
         model-name: qwen-max
         api-key: sk-357bce1de7984ea591631c96f00d30ad
-pgvector:
-  database: dp
-  host: localhost
-  port : 54328
-  user: root
-  password: e65K4t7z1
-  table: dp_embedding
 
 management:
   endpoints:
@@ -60,7 +48,4 @@ management:
   endpoint:
     health:
       show-details: always
-
-rag:
-  docs-path: docs
 
