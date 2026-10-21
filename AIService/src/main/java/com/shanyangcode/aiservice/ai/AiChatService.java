@@ -7,6 +7,7 @@ import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.community.store.memory.chat.redis.RedisChatMemoryStore;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.service.AiServices;
 import jakarta.annotation.Resource;
@@ -29,11 +30,14 @@ public class AiChatService {
     private RagTool ragTool;
     @Resource
     private EmailTool emailTool;
+    @Resource
+    private StreamingChatModel streamingChatModel;
 
     @Bean
     public AiChat aiChat() {
         return AiServices.builder(AiChat.class)
                 .chatModel(chatModel)
+                .streamingChatModel(streamingChatModel)
                 .chatMemoryProvider(memoryId -> MessageWindowChatMemory
                         .builder()
                         .id(memoryId)

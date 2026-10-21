@@ -41,6 +41,9 @@ langchain4j:
       embedding-model:
         model-name: text-embedding-v4
         api-key: sk-357bce1de7984ea591631c96f00d30ad
+      streaming-chat-model:
+        model-name: qwen-max
+        api-key: sk-357bce1de7984ea591631c96f00d30ad
 pgvector:
   database: dp
   host: localhost
@@ -49,9 +52,15 @@ pgvector:
   password: e65K4t7z1
   table: dp_embedding
 
-
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
 
 rag:
   docs-path: docs
-
 
