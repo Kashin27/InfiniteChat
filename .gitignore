@@ -33,6 +33,13 @@ build/
 ### VS Code ###
 .vscode/
 
+### Python ###
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
 ### Logs ###
 *.log
 logs/
