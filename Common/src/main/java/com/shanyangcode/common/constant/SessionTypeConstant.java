@@ -1,4 +1,4 @@
-package com.shanyangcode.common.constants;
+package com.shanyangcode.common.constant;
 
 public class SessionTypeConstant {
 

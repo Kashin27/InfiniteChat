@@ -1,18 +1,20 @@
 package com.shanyangcode.userservice.controller;
 
 
-import com.shanyangcode.userservice.common.BaseResponse;
-import com.shanyangcode.userservice.common.ErrorCode;
-import com.shanyangcode.userservice.common.ResultUtils;
+import com.shanyangcode.common.response.BaseResponse;
+import com.shanyangcode.common.exception.ErrorCode;
+import com.shanyangcode.common.response.ResultUtils;
 import com.shanyangcode.userservice.constant.UserConstant;
-import com.shanyangcode.userservice.exception.ThrowUtils;
+import com.shanyangcode.common.exception.*;
 import com.shanyangcode.userservice.model.dto.UserLoginCodeRequest;
 import com.shanyangcode.userservice.model.dto.UserLoginPasswordRequest;
 import com.shanyangcode.userservice.model.dto.UserRegisterRequest;
+import com.shanyangcode.userservice.model.dto.UpdateAvatarRequest;
+import com.shanyangcode.userservice.model.vo.UploadUrlResponse;
 import com.shanyangcode.userservice.model.vo.LoginAndRegisterResponse;
 import com.shanyangcode.userservice.model.vo.TokenResponse;
 import com.shanyangcode.userservice.service.UserService;
-import com.shanyangcode.userservice.utils.JwtUtil;
+import com.shanyangcode.common.utils.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +24,7 @@ import jakarta.validation.constraints.NotBlank;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
 
 @RestController
 @RequestMapping("/api/user")
@@ -72,6 +75,19 @@ public class UserController {
         String refreshToken = request.getHeader("Refresh-Token");
         ThrowUtils.throwIf(StringUtils.isBlank(refreshToken), ErrorCode.PARAMS_ERROR);
         return ResultUtils.success(userService.refreshToken(refreshToken));
+    }
+    @GetMapping("/refresh/uri")
+    public BaseResponse<String> refreshUri(@RequestParam Long userId) {
+        return ResultUtils.success(userService.refreshUri(userId));
+    }
+    @GetMapping("/uploadUrl")
+    public BaseResponse<UploadUrlResponse> getUploadUrl(@RequestParam String fileName) {
+        return ResultUtils.success(userService.uploadUrl(fileName));
+    }
+
+    @PostMapping("/update/avatar")
+    public BaseResponse<Boolean> updateAvatar(@RequestBody UpdateAvatarRequest updateAvatarRequest)  {
+        return ResultUtils.success(userService.updateAvatar(updateAvatarRequest));
     }
 
 

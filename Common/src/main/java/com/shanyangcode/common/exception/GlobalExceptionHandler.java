@@ -1,25 +1,20 @@
-package com.shanyangcode.aiservice.exception;
-
+package com.shanyangcode.common.exception;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import com.shanyangcode.common.response.BaseResponse;
+import com.shanyangcode.common.response.ResultUtils;
 
-import com.shanyangcode.aiservice.common.BaseResponse;
-import com.shanyangcode.aiservice.common.ErrorCode;
-import com.shanyangcode.aiservice.common.ResultUtils;
-
-import dev.langchain4j.guardrail.InputGuardrailException;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/**
- * 全局异常处理器
- */
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
@@ -44,10 +39,8 @@ public class GlobalExceptionHandler {
             String message = error.getDefaultMessage();
             errors.put(fieldName, message);
         });
-        String message = errors.toString();
-        return ResultUtils.error(ErrorCode.INVALID_PARAMETER_ERROR, message);
+        return ResultUtils.error(ErrorCode.INVALID_PARAMETER_ERROR, errors.toString());
     }
-
 
     @ExceptionHandler(value = MissingServletRequestParameterException.class)
     public BaseResponse<?> handlerMissingServletRequestParameterException(Exception e) {
@@ -55,11 +48,12 @@ public class GlobalExceptionHandler {
         return ResultUtils.error(ErrorCode.INVALID_PARAMETER_ERROR, "缺少必填参数");
     }
 
-    @ExceptionHandler(InputGuardrailException.class)
-    public BaseResponse<?> inputGuardrailExceptionHandler(InputGuardrailException e) {
-        log.error("敏感词拦截: {}", e.getMessage());
-        // 直接从异常信息里获取提示内容返回给前端
-        // 或者统一返回 SENSITIVE_WORD_ERROR
-        return ResultUtils.error(ErrorCode.SENSITIVE_WORD_ERROR);
+    @ExceptionHandler(ConstraintViolationException.class)
+    public BaseResponse<?> handleConstraintViolation(ConstraintViolationException e) {
+        String message = e.getConstraintViolations().stream()
+                .map(ConstraintViolation::getMessage)
+                .findFirst()
+                .orElse("请求参数校验失败");
+        return ResultUtils.error(ErrorCode.PARAMS_ERROR, message);
     }
 }

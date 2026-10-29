@@ -1,18 +1,16 @@
-package com.shanyangcode.userservice.utils;
+package com.shanyangcode.common.utils;
 
-import java.security.Key;
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
-
-
-import com.shanyangcode.userservice.constant.UserConstant;
-
+import com.shanyangcode.common.constant.CommonConstant;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+
+import javax.crypto.SecretKey;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 /**
  * JWT工具类（优化点：完善异常日志、统一过期时间配置）
@@ -39,8 +37,8 @@ public final class JwtUtil {
     /**
      * 获取签名密钥（从常量类读取，避免硬编码）
      */
-    public static Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(UserConstant.TOKEN_SECRET_KEY);
+    public static SecretKey getSignInKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(CommonConstant.TOKEN_SECRET_KEY);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 

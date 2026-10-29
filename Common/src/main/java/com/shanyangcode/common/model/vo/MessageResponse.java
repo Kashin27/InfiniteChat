@@ -1,6 +1,7 @@
 package com.shanyangcode.common.model.vo;
 
 
+import com.shanyangcode.common.model.dto.MessageBody;
 import lombok.Data;
 
 @Data
@@ -32,6 +33,8 @@ public class MessageResponse {
 
 
     private String avatar;
+
+    private MessageBody body;
 
 
     private Integer role;

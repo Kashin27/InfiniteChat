@@ -5,20 +5,25 @@ import cn.hutool.core.lang.Snowflake;
 import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.shanyangcode.userservice.common.ErrorCode;
+import com.shanyangcode.common.constant.CommonConstant;
+import com.shanyangcode.common.exception.ErrorCode;
 import com.shanyangcode.userservice.constant.UserConstant;
-import com.shanyangcode.userservice.exception.ThrowUtils;
+import com.shanyangcode.common.exception.*;
+import com.shanyangcode.userservice.loadbalancer.NettyServiceLocator;
 import com.shanyangcode.userservice.mapper.UserMapper;
+import com.shanyangcode.userservice.model.dto.UpdateAvatarRequest;
 import com.shanyangcode.userservice.model.dto.UserLoginCodeRequest;
 import com.shanyangcode.userservice.model.dto.UserLoginPasswordRequest;
 import com.shanyangcode.userservice.model.dto.UserRegisterRequest;
 import com.shanyangcode.userservice.model.entity.User;
 import com.shanyangcode.userservice.model.vo.LoginAndRegisterResponse;
 import com.shanyangcode.userservice.model.vo.TokenResponse;
+import com.shanyangcode.userservice.model.vo.UploadUrlResponse;
 import com.shanyangcode.userservice.service.UserService;
 
 import com.shanyangcode.userservice.utils.EmailUtil;
-import com.shanyangcode.userservice.utils.JwtUtil;
+import com.shanyangcode.common.utils.JwtUtil;
+import com.shanyangcode.userservice.utils.OssUtils;
 import com.shanyangcode.userservice.utils.RandomCodeUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.annotation.Resource;
@@ -40,6 +45,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Resource
     private EmailUtil emailUtil;
 
+    @Resource
+    private NettyServiceLocator serviceInstanceUtil;
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
@@ -68,7 +75,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
 
         // 验证密码是否相同
-        ThrowUtils.throwIf(!userRegisterRequest.getPassword().equals(userRegisterRequest.getConfirmPassword()),ErrorCode.LOGIN_PASSWORD_ERROR);
+        ThrowUtils.throwIf(!userRegisterRequest.getPassword().equals(userRegisterRequest.getConfirmPassword()),ErrorCode.LOGIN_ERROR);
 
 
         String password = userRegisterRequest.getPassword();
@@ -141,22 +148,32 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     public LoginAndRegisterResponse createJwt(LoginAndRegisterResponse loginAndRegisterResponse) {
         String userId = loginAndRegisterResponse.getUserId().toString();
-        String accessToken = JwtUtil.generate(userId, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
-        String refreshToken = JwtUtil.generate(userId, UserConstant.REFRESH_TOKEN_EXPIRE_TIME, UserConstant.REFRESH_TOKEN_UNIT);
+        String accessToken = JwtUtil.generate(userId, CommonConstant.ACCESS_TOKEN_EXPIRE_TIME, CommonConstant.ACCESS_TOKEN_UNIT);
+        String refreshToken = JwtUtil.generate(userId, CommonConstant.REFRESH_TOKEN_EXPIRE_TIME, CommonConstant.REFRESH_TOKEN_UNIT);
         loginAndRegisterResponse.setAccessToken(accessToken);
         loginAndRegisterResponse.setRefreshToken(refreshToken);
-        stringRedisTemplate.opsForValue().set(UserConstant.ACCESS_TOKEN_PREFIX + userId, accessToken, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
-        stringRedisTemplate.opsForValue().set(UserConstant.REFRESH_TOKEN_PREFIX + userId, refreshToken, UserConstant.REFRESH_TOKEN_EXPIRE_TIME, UserConstant.REFRESH_TOKEN_UNIT);
+        stringRedisTemplate.opsForValue().set(CommonConstant.ACCESS_TOKEN_PREFIX + userId, accessToken, CommonConstant.ACCESS_TOKEN_EXPIRE_TIME, CommonConstant.ACCESS_TOKEN_UNIT);
+        stringRedisTemplate.opsForValue().set(CommonConstant.REFRESH_TOKEN_PREFIX + userId, refreshToken, CommonConstant.REFRESH_TOKEN_EXPIRE_TIME, CommonConstant.REFRESH_TOKEN_UNIT);
+        loginAndRegisterResponse.setAccessToken(accessToken);
+        loginAndRegisterResponse.setRefreshToken(refreshToken);
+        stringRedisTemplate.opsForValue().set(CommonConstant.ACCESS_TOKEN_PREFIX + userId, accessToken, CommonConstant.ACCESS_TOKEN_EXPIRE_TIME, CommonConstant.ACCESS_TOKEN_UNIT);
+        stringRedisTemplate.opsForValue().set(CommonConstant.REFRESH_TOKEN_PREFIX + userId, refreshToken, CommonConstant.REFRESH_TOKEN_EXPIRE_TIME, CommonConstant.REFRESH_TOKEN_UNIT);
+        String nettyUri = serviceInstanceUtil.getServiceInstance(loginAndRegisterResponse.getUserId().toString());
+        loginAndRegisterResponse.setNettyUri(nettyUri);
         return loginAndRegisterResponse;
     }
 
     @Override
     public boolean logout(String userId) {
-        stringRedisTemplate.delete(UserConstant.ACCESS_TOKEN_PREFIX + userId);
-        stringRedisTemplate.delete(UserConstant.REFRESH_TOKEN_PREFIX + userId);
+        stringRedisTemplate.delete(CommonConstant.ACCESS_TOKEN_PREFIX + userId);
+        stringRedisTemplate.delete(CommonConstant.REFRESH_TOKEN_PREFIX + userId);
         return true;
     }
 
+    @Override
+    public String refreshUri(Long userId) {
+        return serviceInstanceUtil.getServiceInstance(String.valueOf(userId));
+    }
 
     @Override
     public TokenResponse refreshToken(String refreshToken) {
@@ -169,19 +186,40 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         String userId = claims.getSubject();
 
         // 3. 校验 Redis，防止 Token 撤销攻击（实现单设备登录的关键）
-        String redisRefreshToken = stringRedisTemplate.opsForValue().get(UserConstant.REFRESH_TOKEN_PREFIX + userId);
+        String redisRefreshToken = stringRedisTemplate.opsForValue().get(CommonConstant.REFRESH_TOKEN_PREFIX + userId);
         ThrowUtils.throwIf(!refreshToken.equals(redisRefreshToken), ErrorCode.TOKEN_INVALID, "凭证已过期或在其他地方登录");
 
 
         // 4. 生成新的一对 Token
-        String newAccessToken = JwtUtil.generate(userId, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
-        String newRefreshToken = JwtUtil.generate(userId, UserConstant.REFRESH_TOKEN_EXPIRE_TIME, UserConstant.REFRESH_TOKEN_UNIT);
+        String newAccessToken = JwtUtil.generate(userId, CommonConstant.ACCESS_TOKEN_EXPIRE_TIME, CommonConstant.ACCESS_TOKEN_UNIT);
+        String newRefreshToken = JwtUtil.generate(userId, CommonConstant.REFRESH_TOKEN_EXPIRE_TIME, CommonConstant.REFRESH_TOKEN_UNIT);
 
         // 5. 更新 Redis
-        stringRedisTemplate.opsForValue().set(UserConstant.ACCESS_TOKEN_PREFIX + userId, newAccessToken, UserConstant.ACCESS_TOKEN_EXPIRE_TIME, UserConstant.ACCESS_TOKEN_UNIT);
-        stringRedisTemplate.opsForValue().set(UserConstant.REFRESH_TOKEN_PREFIX + userId, newRefreshToken, UserConstant.REFRESH_TOKEN_EXPIRE_TIME, UserConstant.REFRESH_TOKEN_UNIT);
+        stringRedisTemplate.opsForValue().set(CommonConstant.ACCESS_TOKEN_PREFIX + userId, newAccessToken, CommonConstant.ACCESS_TOKEN_EXPIRE_TIME, CommonConstant.ACCESS_TOKEN_UNIT);
+        stringRedisTemplate.opsForValue().set(CommonConstant.REFRESH_TOKEN_PREFIX + userId, newRefreshToken, CommonConstant.REFRESH_TOKEN_EXPIRE_TIME, CommonConstant.REFRESH_TOKEN_UNIT);
         return TokenResponse.builder().accessToken(newAccessToken).refreshToken(newRefreshToken).build();
     }
+    @Resource
+    private OssUtils ossUtils;
+
+    @Override
+    public UploadUrlResponse uploadUrl(String fileName) {
+        UploadUrlResponse uploadUrlResponse = new UploadUrlResponse();
+        uploadUrlResponse.setUploadUrl(ossUtils.uploadUrl(CommonConstant.BUCKET_NAME, fileName, CommonConstant.PICTURE_EXPIRE_TIME));
+        uploadUrlResponse.setDownloadUrl(ossUtils.downUrl(CommonConstant.BUCKET_NAME, fileName));
+        return uploadUrlResponse;
+    }
+
+    @Override
+    public Boolean updateAvatar(UpdateAvatarRequest updateAvatarRequest) {
+        User user = this.getById(updateAvatarRequest.getUserId());
+        if (user == null) {
+            return false;
+        }
+        user.setAvatar(updateAvatarRequest.getUri());
+        return this.updateById(user);
+    }
+
 }
 
 

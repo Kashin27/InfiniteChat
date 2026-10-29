@@ -16,9 +16,8 @@ spring:
             enable: true
 
 server:
-  port: 10010
-  servlet:
-    context-path: /api
+  port: 8105
+
 
 logging:
   level:

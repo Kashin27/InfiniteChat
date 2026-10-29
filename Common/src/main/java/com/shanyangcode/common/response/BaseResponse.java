@@ -1,6 +1,6 @@
-package com.shanyangcode.aiservice.common;
+package com.shanyangcode.common.response;
 
-import okhttp3.internal.http2.ErrorCode;
+import com.shanyangcode.common.exception.ErrorCode;
 
 import java.io.Serializable;
 
@@ -8,18 +8,22 @@ public class BaseResponse<T> implements Serializable {
     private int code;
     private T data;
     private String message;
+
     public BaseResponse(int code, T data, String message) {
         this.code = code;
         this.data = data;
         this.message = message;
     }
-    public BaseResponse(int code, T data) {
-        this.code = code;
-        this.data = data;
-    }
-    public BaseResponse(ErrorCode errorCode) {
 
+    public BaseResponse(int code, T data) {
+        this(code, data, "");
+    }
+
+    public BaseResponse(ErrorCode errorCode) {
         this(errorCode.getCode(), null, errorCode.getMessage());
     }
 
+    public int getCode() { return code; }
+    public T getData() { return data; }
+    public String getMessage() { return message; }
 }

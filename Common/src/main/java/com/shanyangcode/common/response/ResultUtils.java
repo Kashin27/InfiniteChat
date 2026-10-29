@@ -1,5 +1,5 @@
-package com.shanyangcode.aiservice.common;
-
+package com.shanyangcode.common.response;
+import com.shanyangcode.common.exception.ErrorCode;
 /**
  * 返回工具类
  */
@@ -15,21 +15,15 @@ public class ResultUtils {
     /**
      * 失败
      */
-    public static BaseResponse error(ErrorCode errorCode) {
+    public static BaseResponse<?> error(ErrorCode errorCode) {
         return new BaseResponse<>(errorCode);
     }
 
-    /**
-     * 失败
-     */
-    public static BaseResponse error(int code, String message) {
-        return new BaseResponse(code, null, message);
+    public static BaseResponse<?> error(int code, String message) {
+        return new BaseResponse<>(code, null, message);
     }
 
-    /**
-     * 失败
-     */
-    public static BaseResponse error(ErrorCode errorCode, String message) {
-        return new BaseResponse(errorCode.getCode(), null, message);
+    public static BaseResponse<?> error(ErrorCode errorCode, String message) {
+        return new BaseResponse<>(errorCode.getCode(), null, message);
     }
 }
